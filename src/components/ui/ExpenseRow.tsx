@@ -1,18 +1,21 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 type ExpenseRowProps = {
 	title: string;
 	amount: string | number;
+	onPress?: () => void;
 };
 
-export default function ExpenseRow({ title, amount }: ExpenseRowProps) {
+export default function ExpenseRow({ title, amount, onPress }: ExpenseRowProps) {
 	return (
-		<View style={styles.row}>
-			<Text style={styles.title} numberOfLines={1}>
-				{title}
-			</Text>
-			<Text style={styles.amount}>{amount}</Text>
-		</View>
+		<Pressable onPress={onPress}>			
+			<View style={styles.row}>
+				<Text style={styles.title} numberOfLines={1}>
+					{title}
+				</Text>
+				<Text style={styles.amount}>{amount}</Text>
+			</View>
+		</Pressable>
 	);
 }
 

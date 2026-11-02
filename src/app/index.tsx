@@ -1,4 +1,6 @@
-import ExpenseRow from '@/components/ExpenseRow';
+
+import ExpenseRow from '@/components/ui/ExpenseRow';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
@@ -9,6 +11,7 @@ type Expense = {
 };
 
 export default function HomeScreen() {
+  const router = useRouter();
   
   const [expenses, setExpenses] = useState<Expense[]>([
     { id: '1', title: 'Groceries', amount: '$50.00' },
@@ -19,7 +22,9 @@ export default function HomeScreen() {
   return (
     <View style={{ flex: 1, padding: 16, gap: 8 }}>
       {expenses.map((expense) => (
-        <ExpenseRow key={expense.id} title={expense.title} amount={expense.amount} />
+        <ExpenseRow key={expense.id} title={expense.title} amount={expense.amount} onPress={() => 
+          router.push(`/expense/${expense.id}`)  
+        } />
       ))}
       <Pressable
         onPress={() =>

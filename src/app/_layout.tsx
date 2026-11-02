@@ -14,6 +14,7 @@ export default function RootLayout() {
         <ThemeProvider value={DefaultTheme}>
         <Stack>
           <Stack.Screen name='index' options={{title: 'Receipts'}}/>
+          <Stack.Screen name='expense/[id]' options={{title: 'Expense details'}}/>
         </Stack>
         <StatusBar barStyle='auto' />
         </ThemeProvider>
