@@ -1,6 +1,31 @@
 import * as SQLite from 'expo-sqlite';
+import { NewExpense } from './expenses.repo';
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
+
+const SEED: NewExpense[] = [
+  {
+    title: 'Groceries',
+    amount_minor: 5000,
+    currency: 'USD',
+    spent_at: '2024-06-01T10:00:00Z',
+    created_at: new Date().toISOString(),
+  },
+  {
+    title: 'Taxi',
+    amount_minor: 2000,
+    currency: 'USD',
+    spent_at: '2024-06-02T15:30:00Z',
+    created_at: new Date().toISOString(),
+  },
+  {
+    title: 'Coffee',
+    amount_minor: 3000,
+    currency: 'USD',
+    spent_at: '2024-06-03T08:45:00Z',
+    created_at: new Date().toISOString(),
+  }
+];
 
 async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
   const row = await db.getFirstAsync<{ user_version: number }>('PRAGMA user_version');

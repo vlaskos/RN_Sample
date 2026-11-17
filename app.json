@@ -8,7 +8,8 @@
     "scheme": "receiptslab",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.receiptslab.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -33,7 +34,13 @@
           "imageWidth": 76
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow photo access to scan the total from a receipt."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

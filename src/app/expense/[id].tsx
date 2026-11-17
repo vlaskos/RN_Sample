@@ -1,77 +1,87 @@
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useExpense } from '@/features/expenses/useExpenses';
+import { useHistoricalRate } from '@/features/rates/useRates';
+import { useAppSelector } from '@/store/hooks';
+import { useLocalSearchParams } from 'expo-router';
+import { type ReactNode } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 
-export default function ExpenseScreen() {
-	const { id } = useLocalSearchParams<{ id: string | string[] }>();
-	const router = useRouter();
-	const expenseId = Array.isArray(id) ? id[0] : id;
+function formatMoney(amount: number, currency: string) {
+  return `${amount.toFixed(2)} ${currency}`;
+}
 
-	return (
-		<SafeAreaView style={styles.container}>
-			<Stack.Screen options={{ title: 'Expense details' }} />
-			<Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}>
-				<Text style={styles.backText}>‹  Back</Text>
-			</Pressable>
+export default function ExpenseDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string | string[] }>();
+  const expenseId = Number(Array.isArray(id) ? id[0] : id);
+  const baseCurrency = useAppSelector((s) => s.settings.baseCurrency);
 
-			<View style={styles.content}>
-				<Text style={styles.eyebrow}>EXPENSE</Text>
-				<Text style={styles.title}>Expense details</Text>
-				<View style={styles.card}>
-					<Text style={styles.label}>Expense ID</Text>
-					<Text selectable style={styles.id}>{expenseId || 'Not provided'}</Text>
-				</View>
-			</View>
-		</SafeAreaView>
-	);
+  const expenseQuery = useExpense(expenseId);
+  const expense = expenseQuery.data;
+
+  // All hooks run BEFORE any early return (Rules of Hooks). The `enabled`
+  // flag gates the network request while the expense is missing or the
+  // currencies match.
+  const rateQuery = useHistoricalRate(
+    expense?.currency ?? '',
+    baseCurrency,
+    expense?.spent_at.slice(0, 10) ?? '',
+  );
+
+  if (expenseQuery.isPending) return <Centered><ActivityIndicator /></Centered>;
+  if (expenseQuery.isError) return <Centered><Text>Error: {expenseQuery.error.message}</Text></Centered>;
+  if (!expense) return <Centered><Text>Expense not found</Text></Centered>;
+
+  const amount = expense.amount_minor / 100;
+  const sameCurrency = expense.currency === baseCurrency;
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{expense.title}</Text>
+      <Text style={styles.amount}>{formatMoney(amount, expense.currency)}</Text>
+      <Text style={styles.date}>{expense.spent_at.slice(0, 10)}</Text>
+
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>In base currency ({baseCurrency})</Text>
+        <Text style={styles.cardValue}>
+          {sameCurrency
+            ? `${formatMoney(amount, baseCurrency)} (same currency)`
+            : rateQuery.isPending
+              ? 'Loading rate…'
+              : rateQuery.isError
+                ? 'Rate error'
+                : rateQuery.data == null
+                  ? 'No rate for this date/currency'
+                  : formatMoney(amount * rateQuery.data.rate, baseCurrency)}
+        </Text>
+        {!sameCurrency && rateQuery.data != null ? (
+          <Text style={styles.rateNote}>
+            rate {expense.currency}/{baseCurrency} on {rateQuery.data.date}: {rateQuery.data.rate}
+          </Text>
+        ) : null}
+      </View>
+    </View>
+  );
+}
+
+function Centered({ children }: { children: ReactNode }) {
+  return <View style={styles.centered}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: '#f8fafc',
-	},
-	backButton: {
-		alignSelf: 'flex-start',
-		paddingHorizontal: 20,
-		paddingVertical: 12,
-	},
-	backText: {
-		color: '#475569',
-		fontSize: 16,
-		fontWeight: '600',
-	},
-	content: {
-		padding: 24,
-	},
-	eyebrow: {
-		color: '#64748b',
-		fontSize: 12,
-		fontWeight: '700',
-		letterSpacing: 1.2,
-	},
-	title: {
-		color: '#0f172a',
-		fontSize: 28,
-		fontWeight: '700',
-		marginTop: 8,
-		marginBottom: 24,
-	},
-	card: {
-		backgroundColor: '#ffffff',
-		borderColor: '#e2e8f0',
-		borderRadius: 16,
-		borderWidth: 1,
-		padding: 20,
-	},
-	label: {
-		color: '#64748b',
-		fontSize: 14,
-	},
-	id: {
-		color: '#0f172a',
-		fontSize: 18,
-		fontWeight: '600',
-		marginTop: 8,
-	},
+  container: { flex: 1, padding: 24, gap: 6 },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  title: { fontSize: 26, fontWeight: '700' },
+  amount: { fontSize: 20, fontWeight: '600', marginTop: 4 },
+  date: { color: '#64748b', fontSize: 14 },
+  card: {
+    marginTop: 20,
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 18,
+    gap: 6,
+  },
+  cardLabel: { color: '#64748b', fontSize: 13, fontWeight: '600' },
+  cardValue: { color: '#0f172a', fontSize: 20, fontWeight: '700' },
+  rateNote: { color: '#94a3b8', fontSize: 12 },
 });

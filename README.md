@@ -1,56 +1,40 @@
-# Welcome to your Expo app 👋
+# RN_Sample
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A small expense tracker I built to keep one clean example of every React Native topic that shows up in interviews: navigation, a local database, server state, forms, lists, gestures, images, and a native module. No product noise, just the patterns. It also got me back into the New Architecture after years on the old bridge.
 
-## Get started
+The app is called Receipts. It stores expenses in SQLite, converts each one to your base currency using historical rates from the Frankfurter API, and lets you attach a receipt photo. On iOS it reads the total off that photo with an on-device OCR module written in Swift.
 
-1. Install dependencies
+<img src="assets/screenshot.png" width="280" alt="Receipts expense list" />
 
-   ```bash
-   npm install
-   ```
+## What's in it
 
-2. Start the app
+- **Navigation.** Expo Router, file-based: a tab layout, a modal for the add-expense form, and a `receipts://expense/<id>` deep link.
+- **Database.** expo-sqlite behind a repository, with versioned migrations and keyset pagination.
+- **Server state.** React Query against the Frankfurter currency API. Historical rates get `staleTime: Infinity`, since they never change once published.
+- **Client state.** Redux Toolkit for settings (base currency, theme), persisted to MMKV so they survive a relaunch.
+- **Forms.** React Hook Form with zod validation.
+- **Lists and gestures.** FlashList with day section headers and swipe-to-delete built on Reanimated.
+- **Native module.** A local Swift module, `receipt-ocr`, runs Apple Vision text recognition on a file and hands back the lines; a pure `parseTotal` function picks out the total (tested with Jest). Android gets a no-op fallback.
 
-   ```bash
-   npx expo start
-   ```
+## Screens
 
-In the output, you'll find options to open the app in a
+<img src="assets/screenshot-settings.png" width="260" alt="Settings: base currency and theme, persisted to MMKV" /> <img src="assets/screenshot-new.png" width="260" alt="New expense form with validation and an iOS Scan amount button" />
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+Settings (Redux + MMKV) and the add-expense form (React Hook Form + zod, with the iOS-only Scan amount button that runs the native OCR module).
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Stack
 
-## Get a fresh project
+Expo SDK 58, React Native 0.88, React 19.3, New Architecture (Fabric, TurboModules, JSI, Hermes), TypeScript in strict mode. Every dependency went in through `expo install` so the versions match the SDK.
 
-When you're ready, run:
+## Running it
+
+Needs Node 22 and Xcode 26.2. It ships a native module and MMKV, so it runs as a dev build, not in Expo Go.
 
 ```bash
-npm run reset-project
+nvm use                                      # Node 22
+npm install
+npx expo prebuild -p ios                     # generates ios/, installs 121 pods
+npx expo run:ios --device "iPhone 18 Pro"    # iOS 27.2
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+One trap: the build links against Xcode 26.2's libc++, so the same binary crashes at launch on an older simulator (iOS 17.4) that lacks those symbols. Run it on an iOS 26 or 27 simulator. `npx tsc --noEmit` is clean and `npx jest` passes the `parseTotal` suite.

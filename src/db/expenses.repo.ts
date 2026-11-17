@@ -64,3 +64,13 @@ export async function seedExpensesIfEmpty(seedExpenses: NewExpense[]): Promise<v
 		});
 	}
 }
+
+export async function clearExpenses(): Promise<void> {
+	const db = await getDb();
+	await db.runAsync("DELETE FROM expenses");
+}
+
+export async function deleteExpense(id: number): Promise<void> {
+	const db = await getDb();
+	await db.runAsync("DELETE FROM expenses WHERE id = ?", id);
+}
